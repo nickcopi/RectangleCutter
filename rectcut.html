@@ -1,0 +1,192 @@
+
+<canvas id = 'canvas' width = '500'; height='500'></canvas>
+<script>
+	class Rect{
+		constructor(x,y,width,height,wall){
+			this.x = x;
+			this.y = y;
+			this.width = width;
+			this.height = height;
+			this.wall = wall;
+		}
+		getArea(){
+			return this.width*this.height;
+		}
+	}
+	class TileCutter{
+		constructor(width,height){
+			this.rects = [];
+			this.outlines = [];
+			this.tiles = [];
+			this.width = width;
+			this.height = height;
+			this.canvas = document.getElementById('canvas');
+			this.ctx = this.canvas.getContext('2d');
+			this.rects.push(new Rect(10,20,100,20,true));
+			this.rects.push(new Rect(100,240,300,50,true));
+			this.rects.push(new Rect(50,80,50,50,true));
+			this.rects.push(new Rect(400,400,50,50,true));
+			this.rects.push(new Rect(140,390,20,70,true));
+			this.interval = setInterval(()=>{
+				this.render();
+			},1000/60);
+		}
+		render(){
+			let ctx = this.ctx;
+			let canvas = this.canvas;
+			ctx.clearRect(0,0,canvas.width,canvas.height);
+			ctx.fillStyle = 'black';
+			ctx.fillRect(0,0,this.width,this.height);
+			ctx.fillStyle = 'gray';
+			this.rects.forEach(rect=>{
+				ctx.fillRect(rect.x,rect.y,rect.width,rect.height);
+			});
+			ctx.strokeStyle = 'green';
+			this.tiles.forEach(rect=>{
+				ctx.strokeRect(rect.x,rect.y,rect.width,rect.height);
+			});
+		}
+		calcOutlines(){
+			this.tiles = this.tiles.concat(this.rects);
+			while(true){
+				this.outlines = [];
+				this.tiles.forEach(rect=>{
+					this.testPoint(rect.x,rect.y);
+					this.testPoint(rect.x,rect.y+rect.height);
+					this.testPoint(rect.x+rect.width,rect.y);
+					this.testPoint(rect.x+rect.width,rect.y + rect.height);
+				});
+				this.cornerCalc();
+				let max = new Rect(0,0,0,0);
+				this.outlines.forEach(outline=>{
+					if(outline.getArea() > max.getArea())
+						max = outline
+				});
+
+				if(max.getArea() === 0){
+					return;
+				}
+				this.tiles.push(max);
+			}
+		}
+		cornerCalc(){
+			//let testPoint = this.testPoint;
+			this.testPoint(0,0);
+			this.testPoint(0,this.height);
+			this.testPoint(this.width,0);
+			this.testPoint(this.width,this.height);
+		}
+
+		testPoint(x,y){
+			let top = new Rect(x,y,0,0);
+			let looping = true;
+			let collide = this.collide;
+			let outlines = this.outlines;
+			let tiles = this.tiles;
+			while(top.x >= 0 && looping){
+				top.x--;
+				top.width++;
+				tiles.forEach(rect=>{
+					if(collide(top,rect)){
+						looping = false;
+					}
+				});
+			}
+			top.width--;
+			top.x++;
+			looping = true;
+			while(top.y >= 0 && looping){
+				top.y--;
+				top.height++;
+				tiles.forEach(rect=>{
+					if(collide(top,rect)){
+						looping = false;
+					}
+				});
+			}
+			top.height--;
+			top.y++;		
+			looping = true;
+			let bottom = new Rect(x,y,0,0);
+			while(bottom.x >= 0 && looping){
+				bottom.x--;
+				bottom.width++;
+				tiles.forEach(rect=>{
+					if(collide(bottom,rect)){
+						looping = false;
+					}
+				});
+			}
+			bottom.width--;
+			bottom.x++;
+			looping = true;
+			while(bottom.y+bottom.height <= this.height && looping){
+				bottom.height++;
+				tiles.forEach(rect=>{
+					if(collide(bottom,rect)){
+						looping = false;
+					}
+				});
+			}
+			bottom.height--;
+			looping = true;
+			let right = new Rect(x,y,0,0);
+			while(right.x+right.width <= this.width && looping){
+				right.width++;
+				tiles.forEach(rect=>{
+					if(collide(right,rect)){
+						looping = false;
+					}
+				});
+			}
+			right.width--;
+			looping = true;
+			while(right.y+right.height <= this.height && looping){
+				right.height++;
+				tiles.forEach(rect=>{
+					if(collide(right,rect)){
+						looping = false;
+					}
+				});
+			}
+			right.height--;
+			looping = true;
+			let temp = new Rect(x,y,0,0);
+			while(temp.x+temp.width <= this.width && looping){
+				temp.width++;
+				tiles.forEach(rect=>{
+					if(collide(temp,rect)){
+						looping = false;
+					}
+				});
+			}
+			temp.width--;
+			looping = true;
+			while(temp.y >= 0 && looping){
+				temp.y--;
+				temp.height++;
+				tiles.forEach(rect=>{
+					if(collide(temp,rect)){
+						looping = false;
+					}
+				});
+			}
+			temp.y++;
+			temp.height--;
+			looping = true;
+			if(top.width > 1 && top.height > 1) outlines.push(top);
+			if(bottom.width > 1 && bottom.height > 1) outlines.push(bottom);
+			if(right.width > 1 && right.height > 1) outlines.push(right);
+			if(temp.width > 1 && temp.height > 1) outlines.push(temp);
+		}
+		collide(o1,o2){
+			return (o1.x < o2.x + o2.width && o1.x + o1.width > o2.x && o1.y < o2.y + o2.height && o1.y + o1.height > o2.y) && o1 !== o2;
+		}
+	}
+	window.addEventListener('load',()=>{
+		let game = new TileCutter(500,500);
+	game.calcOutlines();
+	
+	})
+	
+</script>
